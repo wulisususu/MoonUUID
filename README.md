@@ -20,7 +20,9 @@ v0.1 foundation:
 - UUID variant detection and RFC-layout version extraction;
 - Nil UUID and Max UUID;
 - UUIDv4 generation from secure platform entropy;
-- injectable UUIDv4 entropy provider for hosts and deterministic tests;
+- UUIDv7 generation with 48-bit Unix-millisecond timestamps;
+- injectable clock and entropy providers;
+- stateful monotonic UUIDv7 generation with rollback handling;
 - no weak-random fallback when secure entropy is unavailable;
 - equality / ordering / hashing support;
 - RFC 9562 Appendix A UUIDv4 and UUIDv7 test vectors;
@@ -35,6 +37,22 @@ match @moonuuid.v4() {
   Ok(id) => println(@moonuuid.to_string(id))
   Err(_) => println("secure entropy unavailable")
 }
+```
+
+Generate time-ordered UUIDv7:
+
+```moonbit
+match @moonuuid.v7() {
+  Ok(id) => println(@moonuuid.to_string(id))
+  Err(_) => println("UUIDv7 unavailable")
+}
+```
+
+For strict generation-order monotonicity:
+
+```moonbit
+let generator = @moonuuid.V7Generator::new()
+let next_id = generator.next()
 ```
 
 Strict canonical parsing:
@@ -98,7 +116,9 @@ If the current runtime cannot supply secure entropy, generation returns `Entropy
 
 For custom hosts and reproducible testing, use `v4_with_entropy(provider)` or the deterministic `v4_from_entropy(bytes)`.
 
-More details: [docs/V4.md](docs/V4.md).
+UUIDv7 follows the same provider model through `v7_with(clock, entropy)`. Its stateful `V7Generator` preserves strict ordering across same-millisecond calls and clock rollback by reusing the previous timestamp and incrementing the random payload.
+
+More details: [docs/V4.md](docs/V4.md) and [docs/V7.md](docs/V7.md).
 
 ## Text formats
 
@@ -140,11 +160,14 @@ More details: [docs/FORMATS.md](docs/FORMATS.md).
 
 ### Gate 4 — UUIDv7
 
-- [ ] Unix-millisecond timestamp encoding
-- [ ] random `rand_a` / `rand_b`
-- [ ] injectable clock
-- [ ] monotonic generation strategy
-- [ ] RFC 9562 Appendix A conformance
+- [x] 48-bit Unix-millisecond timestamp encoding
+- [x] random `rand_a` / `rand_b`
+- [x] injectable clock and entropy providers
+- [x] platform `@env.now` / `@env.rand` adapter
+- [x] monotonic same-millisecond generation
+- [x] clock rollback handling
+- [x] counter rollover guard
+- [x] RFC 9562 Appendix A conformance
 
 ### Gate 5 — Wider RFC 9562 coverage
 
