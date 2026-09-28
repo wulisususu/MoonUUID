@@ -5,8 +5,9 @@ MoonUUID 0.1.0 is prepared as module `wulisususu/moonuuid`.
 ## Metadata
 
 Before publishing, confirm `moon.mod` contains a semantic version, SPDX
-license, repository URL, homepage, keywords and description. Mooncakes displays
-module metadata together with the README.
+license, repository URL, keywords and description. Mooncakes displays module metadata together with the README. The pinned MoonBit
+0.10.14 toolchain rejects a `homepage` key, so the repository URL and README are
+used as the project navigation surface.
 
 ## Archive policy
 
