@@ -7,8 +7,13 @@ pub struct Uuid {
   low : UInt64
 } derive(Eq, Compare, Hash)
 
+///|
 pub extend Uuid with Eq::{not_equal, equal}
+
+///|
 pub extend Uuid with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+
+///|
 pub extend Uuid with Hash::{hash, hash_combine}
 
 ///|
@@ -20,6 +25,7 @@ pub(all) enum Variant {
   Future
 } derive(Eq)
 
+///|
 pub extend Variant with Eq::{not_equal, equal}
 
 ///|
@@ -31,6 +37,7 @@ pub(all) enum ParseError {
   InvalidWrapper
 } derive(Eq)
 
+///|
 pub extend ParseError with Eq::{not_equal, equal}
 
 ///|
@@ -39,12 +46,13 @@ pub(all) enum BytesError {
   InvalidByteLength(Int)
 } derive(Eq)
 
+///|
 pub extend BytesError with Eq::{not_equal, equal}
 
 ///|
 /// Construct a UUID directly from its high and low 64-bit words.
 pub fn from_u64s(high : UInt64, low : UInt64) -> Uuid {
-  { high, low }
+  { high, low, }
 }
 
 ///|
@@ -62,13 +70,13 @@ pub fn low(uuid : Uuid) -> UInt64 {
 ///|
 /// RFC 9562 Nil UUID: all 128 bits are zero.
 pub fn nil() -> Uuid {
-  { high: 0UL, low: 0UL }
+  { high: 0UL, low: 0UL, }
 }
 
 ///|
 /// RFC 9562 Max UUID: all 128 bits are one.
 pub fn max() -> Uuid {
-  { high: 0xFFFFFFFFFFFFFFFFUL, low: 0xFFFFFFFFFFFFFFFFUL }
+  { high: 0xFFFFFFFFFFFFFFFFUL, low: 0xFFFFFFFFFFFFFFFFUL, }
 }
 
 ///|
@@ -80,8 +88,7 @@ pub fn is_nil(uuid : Uuid) -> Bool {
 ///|
 /// Return true when this is the RFC 9562 Max UUID.
 pub fn is_max(uuid : Uuid) -> Bool {
-  uuid.high == 0xFFFFFFFFFFFFFFFFUL &&
-  uuid.low == 0xFFFFFFFFFFFFFFFFUL
+  uuid.high == 0xFFFFFFFFFFFFFFFFUL && uuid.low == 0xFFFFFFFFFFFFFFFFUL
 }
 
 ///|
@@ -126,7 +133,7 @@ fn parse_canonical_at(text : String, start : Int) -> Result[Uuid, ParseError] {
     }
   }
 
-  Ok({ high, low })
+  Ok({ high, low, })
 }
 
 ///|
@@ -138,27 +145,22 @@ fn parse_compact_at(text : String, start : Int) -> Result[Uuid, ParseError] {
     let index = start + offset
     match hex_value(text.code_unit_at(index)) {
       None => return Err(InvalidHexDigit(index))
-      Some(nibble) => {
+      Some(nibble) =>
         if offset < 16 {
           high = (high << 4) | nibble.to_uint64()
         } else {
           low = (low << 4) | nibble.to_uint64()
         }
-      }
     }
   }
 
-  Ok({ high, low })
+  Ok({ high, low, })
 }
 
 ///|
 fn ascii_eq_ignore_case(actual : UInt16, lowercase_ascii : Int) -> Bool {
   let value = actual.to_int()
-  let folded = if value >= 65 && value <= 90 {
-    value + 32
-  } else {
-    value
-  }
+  let folded = if value >= 65 && value <= 90 { value + 32 } else { value }
   folded == lowercase_ascii
 }
 
@@ -315,7 +317,7 @@ pub fn from_bytes(data : Bytes) -> Result[Uuid, BytesError] {
     low = (low << 8) | data[i].to_int().to_uint64()
   }
 
-  Ok({ high, low })
+  Ok({ high, low, })
 }
 
 ///|

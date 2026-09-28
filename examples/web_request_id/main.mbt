@@ -1,3 +1,4 @@
+///|
 fn main {
   match @uuid.v7() {
     Err(_) => println("secure entropy unavailable")

@@ -5,6 +5,7 @@ pub(all) enum GenerateError {
   InvalidEntropyLength(Int)
 } derive(Eq)
 
+///|
 pub extend GenerateError with Eq::{not_equal, equal}
 
 ///|
@@ -34,7 +35,7 @@ pub fn v4_from_entropy(entropy : Bytes) -> Result[Uuid, GenerateError] {
   high = (high & 0xFFFFFFFFFFFF0FFFUL) | 0x0000000000004000UL
   low = (low & 0x3FFFFFFFFFFFFFFFUL) | 0x8000000000000000UL
 
-  Ok({ high, low })
+  Ok({ high, low, })
 }
 
 ///|

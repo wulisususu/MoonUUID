@@ -14,10 +14,7 @@ fn namespaced_name_bytes(ns : Uuid, name : Bytes) -> FixedArray[Byte] {
 }
 
 ///|
-fn uuid_from_hash_prefix(
-  digest : FixedArray[Byte],
-  uuid_version : Int,
-) -> Uuid {
+fn uuid_from_hash_prefix(digest : FixedArray[Byte], uuid_version : Int) -> Uuid {
   let mut high = 0UL
   let mut low = 0UL
 
@@ -28,14 +25,10 @@ fn uuid_from_hash_prefix(
     low = (low << 8) | digest[i].to_int().to_uint64()
   }
 
-  high =
-    (high & 0xFFFFFFFFFFFF0FFFUL) |
-    (uuid_version.to_uint64() << 12)
-  low =
-    (low & 0x3FFFFFFFFFFFFFFFUL) |
-    0x8000000000000000UL
+  high = (high & 0xFFFFFFFFFFFF0FFFUL) | (uuid_version.to_uint64() << 12)
+  low = (low & 0x3FFFFFFFFFFFFFFFUL) | 0x8000000000000000UL
 
-  { high, low }
+  { high, low, }
 }
 
 ///|

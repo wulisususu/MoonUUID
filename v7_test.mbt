@@ -1,10 +1,7 @@
 ///|
 test "RFC 9562 Appendix A UUIDv7 field vector" {
-  match @moonuuid.v7_from_parts(
-    0x017F22E279B0UL,
-    0xCC3UL,
-    0x18C4DC0C0C07398FUL,
-  ) {
+  match
+    @moonuuid.v7_from_parts(0x017F22E279B0UL, 0xCC3UL, 0x18C4DC0C0C07398FUL) {
     Err(_) => fail("RFC UUIDv7 vector fields must construct")
     Ok(uuid) => {
       assert_eq(
@@ -20,8 +17,7 @@ test "RFC 9562 Appendix A UUIDv7 field vector" {
 
 ///|
 test "v7 entropy mapping reproduces RFC vector" {
-  let entropy =
-    b"\x0c\xc3\x18\xc4\xdc\x0c\x0c\x07\x39\x8f"
+  let entropy = b"\x0c\xc3\x18\xc4\xdc\x0c\x0c\x07\x39\x8f"
 
   match @moonuuid.v7_from_entropy(1645557742000UL, entropy) {
     Err(_) => fail("valid v7 entropy must construct")
@@ -156,14 +152,8 @@ test "monotonic generator carries rand_b into rand_a" {
   match (first, second) {
     (Ok(a), Ok(b)) => {
       assert_true(a < b)
-      assert_eq(
-        @moonuuid.to_string(a),
-        "00000000-0fa0-7001-bfff-ffffffffffff",
-      )
-      assert_eq(
-        @moonuuid.to_string(b),
-        "00000000-0fa0-7002-8000-000000000000",
-      )
+      assert_eq(@moonuuid.to_string(a), "00000000-0fa0-7001-bfff-ffffffffffff")
+      assert_eq(@moonuuid.to_string(b), "00000000-0fa0-7002-8000-000000000000")
     }
     _ => fail("rand_b overflow should carry into rand_a")
   }

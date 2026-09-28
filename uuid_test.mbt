@@ -63,11 +63,8 @@ test "strict parse rejects non-canonical input" {
 test "permissive parse accepts canonical compact URN and braced forms" {
   let expected = "919108f7-52d1-4320-9bac-f847db4148a8"
   let inputs = [
-    "919108F7-52D1-4320-9BAC-F847DB4148A8",
-    "919108F752D143209BACF847DB4148A8",
-    "urn:uuid:919108F7-52D1-4320-9BAC-F847DB4148A8",
-    "URN:UUID:919108F7-52D1-4320-9BAC-F847DB4148A8",
-    "{919108F7-52D1-4320-9BAC-F847DB4148A8}",
+    "919108F7-52D1-4320-9BAC-F847DB4148A8", "919108F752D143209BACF847DB4148A8", "urn:uuid:919108F7-52D1-4320-9BAC-F847DB4148A8",
+    "URN:UUID:919108F7-52D1-4320-9BAC-F847DB4148A8", "{919108F7-52D1-4320-9BAC-F847DB4148A8}",
   ]
 
   for input in inputs {
@@ -84,7 +81,9 @@ test "permissive parse rejects malformed wrappers" {
     @moonuuid.is_valid_permissive("[919108f7-52d1-4320-9bac-f847db4148a8]"),
   )
   assert_false(
-    @moonuuid.is_valid_permissive("xxx:uuid:919108f7-52d1-4320-9bac-f847db4148a8"),
+    @moonuuid.is_valid_permissive(
+      "xxx:uuid:919108f7-52d1-4320-9bac-f847db4148a8",
+    ),
   )
 }
 
@@ -138,8 +137,5 @@ test "u64 constructor round trips through canonical text" {
   let uuid = @moonuuid.from_u64s(0x919108F752D14320UL, 0x9BACF847DB4148A8UL)
   assert_eq(@moonuuid.high(uuid), 0x919108F752D14320UL)
   assert_eq(@moonuuid.low(uuid), 0x9BACF847DB4148A8UL)
-  assert_eq(
-    @moonuuid.to_string(uuid),
-    "919108f7-52d1-4320-9bac-f847db4148a8",
-  )
+  assert_eq(@moonuuid.to_string(uuid), "919108f7-52d1-4320-9bac-f847db4148a8")
 }

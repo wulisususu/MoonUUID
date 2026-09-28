@@ -12,13 +12,7 @@ repository = "https://github.com/wulisususu/MoonUUID"
 
 license = "Apache-2.0"
 
-keywords = [
-  "uuid",
-  "uuidv7",
-  "rfc9562",
-  "identifier",
-  "moonbit",
-]
+keywords = [ "uuid", "uuidv7", "rfc9562", "identifier", "moonbit" ]
 
 description = "RFC 9562 UUID library for MoonBit with v3-v8, monotonic v7, secure generation, and binary/text interop"
 

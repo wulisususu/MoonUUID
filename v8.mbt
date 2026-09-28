@@ -6,6 +6,7 @@ pub(all) enum V8Error {
   CustomCOutOfRange(UInt64)
 } derive(Eq)
 
+///|
 pub extend V8Error with Eq::{not_equal, equal}
 
 ///|
@@ -30,7 +31,7 @@ pub fn v8_from_parts(
 
   let high = (custom_a << 16) | 0x8000UL | custom_b
   let low = 0x8000000000000000UL | custom_c
-  Ok({ high, low })
+  Ok({ high, low, })
 }
 
 ///|

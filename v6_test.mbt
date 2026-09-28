@@ -1,10 +1,7 @@
 ///|
 test "RFC 9562 Appendix A UUIDv6 vector" {
-  match @moonuuid.v6_from_parts(
-    0x1EC9414C232AB00UL,
-    0x33C8UL,
-    0x9F6BDECED846UL,
-  ) {
+  match
+    @moonuuid.v6_from_parts(0x1EC9414C232AB00UL, 0x33C8UL, 0x9F6BDECED846UL) {
     Err(_) => fail("RFC UUIDv6 vector must construct")
     Ok(uuid) => {
       assert_eq(
@@ -14,8 +11,7 @@ test "RFC 9562 Appendix A UUIDv6 vector" {
       assert_true(@moonuuid.version(uuid) == Some(6))
       assert_true(@moonuuid.variant(uuid) == Rfc9562)
       assert_true(
-        @moonuuid.gregorian_ts_100ns(uuid) ==
-        Some(0x1EC9414C232AB00UL),
+        @moonuuid.gregorian_ts_100ns(uuid) == Some(0x1EC9414C232AB00UL),
       )
       assert_true(@moonuuid.v6_clock_seq(uuid) == Some(0x33C8UL))
       assert_true(@moonuuid.v6_node(uuid) == Some(0x9F6BDECED846UL))

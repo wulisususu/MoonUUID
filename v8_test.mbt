@@ -1,10 +1,7 @@
 ///|
 test "RFC 9562 Appendix B UUIDv8 illustrative vector" {
-  match @moonuuid.v8_from_parts(
-    0x2489E9AD2EE2UL,
-    0xE00UL,
-    0x0EC932D5F69181C0UL,
-  ) {
+  match
+    @moonuuid.v8_from_parts(0x2489E9AD2EE2UL, 0xE00UL, 0x0EC932D5F69181C0UL) {
     Err(_) => fail("valid UUIDv8 custom fields must construct")
     Ok(uuid) => {
       assert_eq(
@@ -15,10 +12,7 @@ test "RFC 9562 Appendix B UUIDv8 illustrative vector" {
       assert_true(@moonuuid.variant(uuid) == Rfc9562)
       assert_true(@moonuuid.v8_custom_a(uuid) == Some(0x2489E9AD2EE2UL))
       assert_true(@moonuuid.v8_custom_b(uuid) == Some(0xE00UL))
-      assert_true(
-        @moonuuid.v8_custom_c(uuid) ==
-        Some(0x0EC932D5F69181C0UL),
-      )
+      assert_true(@moonuuid.v8_custom_c(uuid) == Some(0x0EC932D5F69181C0UL))
     }
   }
 }

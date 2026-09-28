@@ -6,6 +6,7 @@ pub(all) enum V6Error {
   NodeOutOfRange(UInt64)
 } derive(Eq)
 
+///|
 pub extend V6Error with Eq::{not_equal, equal}
 
 ///|
@@ -28,16 +29,12 @@ pub fn v6_from_parts(
     return Err(NodeOutOfRange(node))
   }
 
-  let high =
-    ((timestamp_100ns >> 12) << 16) |
+  let high = (timestamp_100ns >> 12 << 16) |
     0x6000UL |
     (timestamp_100ns & 0xFFFUL)
-  let low =
-    0x8000000000000000UL |
-    (clock_seq << 48) |
-    node
+  let low = 0x8000000000000000UL | (clock_seq << 48) | node
 
-  Ok({ high, low })
+  Ok({ high, low, })
 }
 
 ///|
@@ -46,10 +43,7 @@ pub fn v6_from_parts(
 /// Returns None for non-v6 UUIDs.
 pub fn gregorian_ts_100ns(uuid : Uuid) -> UInt64? {
   if version(uuid) == Some(6) {
-    Some(
-      ((uuid.high >> 16) << 12) |
-      (uuid.high & 0xFFFUL),
-    )
+    Some((uuid.high >> 16 << 12) | (uuid.high & 0xFFFUL))
   } else {
     None
   }

@@ -9,6 +9,7 @@ pub(all) enum V7Error {
   MonotonicOverflow
 } derive(Eq)
 
+///|
 pub extend V7Error with Eq::{not_equal, equal}
 
 ///|
@@ -27,12 +28,7 @@ pub struct V7Generator {
 ///|
 /// Construct an empty monotonic UUIDv7 generator.
 pub fn V7Generator::new() -> V7Generator {
-  {
-    initialized: false,
-    last_ms: 0UL,
-    rand_a: 0UL,
-    rand_b: 0UL,
-  }
+  { initialized: false, last_ms: 0UL, rand_a: 0UL, rand_b: 0UL, }
 }
 
 ///|
@@ -68,7 +64,7 @@ pub fn v7_from_parts(
 
   let high = (unix_ms << 16) | 0x7000UL | rand_a
   let low = 0x8000000000000000UL | rand_b
-  Ok({ high, low })
+  Ok({ high, low, })
 }
 
 ///|
@@ -77,10 +73,10 @@ fn v7_entropy_fields(entropy : Bytes) -> Result[(UInt64, UInt64), V7Error] {
     return Err(InvalidEntropyLength(entropy.length()))
   }
 
-  let rand_a =
-    (((entropy[0].to_int().to_uint64() << 8) |
-      entropy[1].to_int().to_uint64()) &
-    0xFFFUL)
+  let rand_a = (
+      (entropy[0].to_int().to_uint64() << 8) | entropy[1].to_int().to_uint64()
+    ) &
+    0xFFFUL
 
   let mut rand_b = 0UL
   for i = 2; i < 10; i = i + 1 {

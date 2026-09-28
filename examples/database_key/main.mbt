@@ -1,3 +1,4 @@
+///|
 fn main {
   let generator = @uuid.V7Generator::new()
 
