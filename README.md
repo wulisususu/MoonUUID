@@ -10,6 +10,7 @@ MoonUUID is designed as a reusable ecosystem library rather than an application-
 - Standard: [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html)
 - Module: `wulisususu/moonuuid`
 - Version: `0.1.0`
+- Release: published to Mooncakes; external registry smoke test passed
 - License: Apache-2.0
 - Targets: `wasm`, `wasm-gc`, `js`, `native`
 
@@ -21,7 +22,7 @@ See [Differentiation](docs/DIFFERENTIATION.md) for a documented comparison with 
 
 ## Install
 
-After the first Mooncakes release:
+MoonUUID `0.1.0` is published on Mooncakes and can be installed directly:
 
 ```bash
 moon add wulisususu/moonuuid@0.1.0
@@ -186,7 +187,9 @@ That boundary keeps the package useful to all of those higher-level systems with
 
 ## Release status
 
-`0.1.0` is the first release candidate. Packaging metadata, archive filtering, examples, API documentation, benchmarks and the release checklist are in-repository before the first Mooncakes publication. The release-readiness workflow verifies the package file list and uploads the generated Mooncakes candidate ZIP as a CI artifact. A separate guarded `publish` workflow performs the authenticated Mooncakes release, then verifies a clean external registry install before creating GitHub Release `v0.1.0`.
+`0.1.0` is the first public release. It is published to Mooncakes as `wulisususu/moonuuid@0.1.0` and tagged as GitHub Release `v0.1.0` from the same commit.
+
+The guarded publish workflow also creates a clean external MoonBit consumer, installs `wulisususu/moonuuid@0.1.0` from the registry with `moon add`, compiles it and runs a canonical UUID round-trip. This registry smoke test passed for the `0.1.0` release, so the package has been verified outside the source repository rather than only through in-repository examples.
 
 See [docs/RELEASE.md](docs/RELEASE.md).
 

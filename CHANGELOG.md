@@ -4,10 +4,13 @@ All notable changes to MoonUUID are documented here.
 
 ## 0.1.0 - 2026-09-28
 
-Initial release candidate.
+Initial public release.
 
 ### Added
 
+- Published to Mooncakes as `wulisususu/moonuuid@0.1.0`.
+- External registry smoke test using a clean consumer installed with `moon add`.
+- GitHub Release/tag `v0.1.0` aligned to the published release commit.
 - RFC 9562 UUID representation, parsing and formatting.
 - Canonical, compact, URN and braced text interoperability.
 - Exact 16-byte network-order conversion.

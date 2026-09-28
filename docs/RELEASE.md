@@ -1,6 +1,16 @@
 # Release and Mooncakes checklist
 
-MoonUUID 0.1.0 is prepared as module `wulisususu/moonuuid`.
+MoonUUID `0.1.0` is published as module `wulisususu/moonuuid`.
+
+## Published state
+
+- Mooncakes module: `wulisususu/moonuuid@0.1.0`
+- GitHub Release / tag: `v0.1.0`
+- Release commit: `376775dec4990f82b12a927d647caf5432d16d98`
+- Registry smoke test: passed from a clean external consumer
+- Smoke path: `moon add` → import → `moon check` → native run → canonical UUID round-trip
+
+The published package is therefore verified from the registry, not only from the source checkout.
 
 ## Metadata
 
@@ -69,7 +79,7 @@ moon run examples/interop --target native
 
 The `release-readiness` GitHub Actions job also uploads the generated
 `_build/publish/*.zip` as the `moonuuid-0.1.0-package` artifact for manual
-inspection before publication.
+inspection. This remains useful for future releases even though `0.1.0` is now published.
 
 ## Mooncakes account
 

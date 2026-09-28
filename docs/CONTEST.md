@@ -47,6 +47,9 @@ moon bench benchmarks --release --target native --deny-warn
 - Runnable examples demonstrate four distinct consumer scenarios.
 - Benchmarks use MoonBit's benchmark harness and release-mode compilation.
 - `moon package --list` is part of release-readiness CI.
+- `wulisususu/moonuuid@0.1.0` is published to Mooncakes.
+- The release workflow creates a clean external consumer, installs the published package with `moon add`, compiles it and runs an RFC UUIDv7 canonical round-trip.
+- GitHub Release `v0.1.0`, the Mooncakes package version and the release commit are aligned.
 
 ## Boundaries
 
@@ -54,5 +57,6 @@ MoonUUID deliberately does not contain an ORM, database driver, HTTP framework,
 tracing system or distributed ID service. Those systems are consumers.
 
 The project does not claim production adoption or fabricated user metrics.
-Repository evidence is runnable, standards-based and machine-checkable; external
-adoption can be measured after publication.
+The current external evidence is deliberately narrower and machine-checkable:
+the published Mooncakes package is installable by a fresh consumer and passes a
+compile-and-run smoke test. Broader third-party adoption is not claimed.
