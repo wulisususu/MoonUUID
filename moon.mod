@@ -10,8 +10,6 @@ readme = "README.md"
 
 repository = "https://github.com/wulisususu/MoonUUID"
 
-homepage = "https://github.com/wulisususu/MoonUUID"
-
 license = "Apache-2.0"
 
 keywords = [
