@@ -25,6 +25,8 @@ v0.1 foundation:
 - stateful monotonic UUIDv7 generation with rollback handling;
 - RFC UUIDv6 field construction and inspection;
 - RFC UUIDv8 custom field construction;
+- UUIDv3 (MD5) and UUIDv5 (SHA-1) name-based generation;
+- RFC Appendix B SHA-256 name-based UUIDv8 profile;
 - standard DNS / URL / OID / X.500 namespace UUIDs;
 - no weak-random fallback when secure entropy is unavailable;
 - equality / ordering / hashing support;
@@ -121,7 +123,7 @@ For custom hosts and reproducible testing, use `v4_with_entropy(provider)` or th
 
 UUIDv7 follows the same provider model through `v7_with(clock, entropy)`. Its stateful `V7Generator` preserves strict ordering across same-millisecond calls and clock rollback by reusing the previous timestamp and incrementing the random payload.
 
-More details: [docs/V4.md](docs/V4.md), [docs/V7.md](docs/V7.md), and [docs/V6_V8.md](docs/V6_V8.md).
+More details: [docs/V4.md](docs/V4.md), [docs/V7.md](docs/V7.md), [docs/V6_V8.md](docs/V6_V8.md), and [docs/NAME_BASED.md](docs/NAME_BASED.md).
 
 ## Text formats
 
@@ -174,10 +176,11 @@ More details: [docs/FORMATS.md](docs/FORMATS.md).
 
 ### Gate 5 — Wider RFC 9562 coverage
 
-- [ ] UUIDv3 / UUIDv5 namespace generation
+- [x] UUIDv3 / UUIDv5 namespace generation
 - [x] UUIDv6 construction / inspection
 - [x] UUIDv8 construction primitives
 - [x] standard namespace constants
+- [x] illustrative SHA-256 name-based UUIDv8 profile
 
 ## Scope
 
