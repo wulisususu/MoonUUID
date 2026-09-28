@@ -23,14 +23,23 @@ pub(all) enum Variant {
 pub extend Variant with Eq::{not_equal, equal}
 
 ///|
-/// Error returned when parsing the canonical 8-4-4-4-12 UUID text form.
+/// Error returned while parsing UUID text.
 pub(all) enum ParseError {
   InvalidLength(Int)
   InvalidHyphen(Int)
   InvalidHexDigit(Int)
+  InvalidWrapper
 } derive(Eq)
 
 pub extend ParseError with Eq::{not_equal, equal}
+
+///|
+/// Error returned while converting binary UUID data.
+pub(all) enum BytesError {
+  InvalidByteLength(Int)
+} derive(Eq)
+
+pub extend BytesError with Eq::{not_equal, equal}
 
 ///|
 /// Construct a UUID directly from its high and low 64-bit words.
@@ -90,28 +99,21 @@ fn hex_value(code_unit : UInt16) -> Int? {
 }
 
 ///|
-/// Parse a canonical UUID string in 8-4-4-4-12 form.
-///
-/// Both uppercase and lowercase hexadecimal digits are accepted.
-/// Formatting always emits lowercase hexadecimal digits.
-pub fn parse(text : String) -> Result[Uuid, ParseError] {
-  if text.length() != 36 {
-    return Err(InvalidLength(text.length()))
-  }
-
+fn parse_canonical_at(text : String, start : Int) -> Result[Uuid, ParseError] {
   let mut high = 0UL
   let mut low = 0UL
   let mut digit_index = 0
 
-  for i = 0; i < 36; i = i + 1 {
-    let code_unit = text.code_unit_at(i)
-    if i == 8 || i == 13 || i == 18 || i == 23 {
+  for offset = 0; offset < 36; offset = offset + 1 {
+    let index = start + offset
+    let code_unit = text.code_unit_at(index)
+    if offset == 8 || offset == 13 || offset == 18 || offset == 23 {
       if code_unit.to_int() != 45 {
-        return Err(InvalidHyphen(i))
+        return Err(InvalidHyphen(index))
       }
     } else {
       match hex_value(code_unit) {
-        None => return Err(InvalidHexDigit(i))
+        None => return Err(InvalidHexDigit(index))
         Some(nibble) => {
           if digit_index < 16 {
             high = (high << 4) | nibble.to_uint64()
@@ -128,9 +130,107 @@ pub fn parse(text : String) -> Result[Uuid, ParseError] {
 }
 
 ///|
+fn parse_compact_at(text : String, start : Int) -> Result[Uuid, ParseError] {
+  let mut high = 0UL
+  let mut low = 0UL
+
+  for offset = 0; offset < 32; offset = offset + 1 {
+    let index = start + offset
+    match hex_value(text.code_unit_at(index)) {
+      None => return Err(InvalidHexDigit(index))
+      Some(nibble) => {
+        if offset < 16 {
+          high = (high << 4) | nibble.to_uint64()
+        } else {
+          low = (low << 4) | nibble.to_uint64()
+        }
+      }
+    }
+  }
+
+  Ok({ high, low })
+}
+
+///|
+fn ascii_eq_ignore_case(actual : UInt16, lowercase_ascii : Int) -> Bool {
+  let value = actual.to_int()
+  let folded = if value >= 65 && value <= 90 {
+    value + 32
+  } else {
+    value
+  }
+  folded == lowercase_ascii
+}
+
+///|
+fn has_urn_uuid_prefix(text : String) -> Bool {
+  text.length() >= 9 &&
+  ascii_eq_ignore_case(text.code_unit_at(0), 117) &&
+  ascii_eq_ignore_case(text.code_unit_at(1), 114) &&
+  ascii_eq_ignore_case(text.code_unit_at(2), 110) &&
+  text.code_unit_at(3).to_int() == 58 &&
+  ascii_eq_ignore_case(text.code_unit_at(4), 117) &&
+  ascii_eq_ignore_case(text.code_unit_at(5), 117) &&
+  ascii_eq_ignore_case(text.code_unit_at(6), 105) &&
+  ascii_eq_ignore_case(text.code_unit_at(7), 100) &&
+  text.code_unit_at(8).to_int() == 58
+}
+
+///|
+/// Parse only the canonical UUID text form: `8-4-4-4-12`.
+///
+/// Both uppercase and lowercase hexadecimal digits are accepted.
+/// Other common wrappers and compact text are intentionally rejected here.
+/// Use `parse_permissive` when interoperability with those forms is required.
+pub fn parse(text : String) -> Result[Uuid, ParseError] {
+  if text.length() != 36 {
+    return Err(InvalidLength(text.length()))
+  }
+  parse_canonical_at(text, 0)
+}
+
+///|
+/// Parse common interoperable UUID text forms.
+///
+/// Accepted forms:
+/// - canonical: `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+/// - compact: `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`
+/// - URN: `urn:uuid:xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`
+/// - braced: `{xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}`
+pub fn parse_permissive(text : String) -> Result[Uuid, ParseError] {
+  match text.length() {
+    36 => parse_canonical_at(text, 0)
+    32 => parse_compact_at(text, 0)
+    38 =>
+      if text.code_unit_at(0).to_int() == 123 &&
+        text.code_unit_at(37).to_int() == 125 {
+        parse_canonical_at(text, 1)
+      } else {
+        Err(InvalidWrapper)
+      }
+    45 =>
+      if has_urn_uuid_prefix(text) {
+        parse_canonical_at(text, 9)
+      } else {
+        Err(InvalidWrapper)
+      }
+    length => Err(InvalidLength(length))
+  }
+}
+
+///|
 /// Return true if `text` is a canonical UUID string accepted by `parse`.
 pub fn is_valid(text : String) -> Bool {
   match parse(text) {
+    Ok(_) => true
+    Err(_) => false
+  }
+}
+
+///|
+/// Return true if `text` is accepted by `parse_permissive`.
+pub fn is_valid_permissive(text : String) -> Bool {
+  match parse_permissive(text) {
     Ok(_) => true
     Err(_) => false
   }
@@ -146,7 +246,7 @@ fn hex_char(nibble : Int) -> Char {
 }
 
 ///|
-/// Format a UUID as lowercase canonical 8-4-4-4-12 text.
+/// Format a UUID as lowercase canonical `8-4-4-4-12` text.
 pub fn to_string(uuid : Uuid) -> String {
   let builder = StringBuilder()
 
@@ -166,6 +266,56 @@ pub fn to_string(uuid : Uuid) -> String {
   }
 
   builder.to_string()
+}
+
+///|
+/// Format a UUID as an RFC UUID URN.
+pub fn to_urn(uuid : Uuid) -> String {
+  "urn:uuid:" + to_string(uuid)
+}
+
+///|
+/// Format a UUID using the common braced canonical form.
+pub fn to_braced_string(uuid : Uuid) -> String {
+  "{" + to_string(uuid) + "}"
+}
+
+///|
+fn uuid_byte(uuid : Uuid, index : Int) -> Byte {
+  if index < 8 {
+    let shift = (7 - index) * 8
+    ((uuid.high >> shift) & 0xFFUL).to_byte()
+  } else {
+    let shift = (15 - index) * 8
+    ((uuid.low >> shift) & 0xFFUL).to_byte()
+  }
+}
+
+///|
+/// Encode the UUID as exactly 16 bytes in RFC network byte order.
+pub fn to_bytes(uuid : Uuid) -> Bytes {
+  let result : Bytes = [ for i in 0..<16 => uuid_byte(uuid, i) ]
+  result
+}
+
+///|
+/// Decode exactly 16 bytes in RFC network byte order into a UUID.
+pub fn from_bytes(data : Bytes) -> Result[Uuid, BytesError] {
+  if data.length() != 16 {
+    return Err(InvalidByteLength(data.length()))
+  }
+
+  let mut high = 0UL
+  let mut low = 0UL
+
+  for i = 0; i < 8; i = i + 1 {
+    high = (high << 8) | data[i].to_int().to_uint64()
+  }
+  for i = 8; i < 16; i = i + 1 {
+    low = (low << 8) | data[i].to_int().to_uint64()
+  }
+
+  Ok({ high, low })
 }
 
 ///|

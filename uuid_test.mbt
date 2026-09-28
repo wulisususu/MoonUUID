@@ -49,10 +49,88 @@ test "Nil and Max UUIDs follow RFC 9562 sentinel definitions" {
 }
 
 ///|
-test "parse rejects non-canonical input" {
+test "strict parse rejects non-canonical input" {
   assert_false(@moonuuid.is_valid("not-a-uuid"))
-  assert_false(@moonuuid.is_valid("919108f7-52d1-4320-9bacf847db4148a8"))
+  assert_false(@moonuuid.is_valid("919108f752d143209bacf847db4148a8"))
+  assert_false(@moonuuid.is_valid("{919108f7-52d1-4320-9bac-f847db4148a8}"))
+  assert_false(
+    @moonuuid.is_valid("urn:uuid:919108f7-52d1-4320-9bac-f847db4148a8"),
+  )
   assert_false(@moonuuid.is_valid("919108f7-52d1-4320-9bac-f847db4148az"))
+}
+
+///|
+test "permissive parse accepts canonical compact URN and braced forms" {
+  let expected = "919108f7-52d1-4320-9bac-f847db4148a8"
+  let inputs = [
+    "919108F7-52D1-4320-9BAC-F847DB4148A8",
+    "919108F752D143209BACF847DB4148A8",
+    "urn:uuid:919108F7-52D1-4320-9BAC-F847DB4148A8",
+    "URN:UUID:919108F7-52D1-4320-9BAC-F847DB4148A8",
+    "{919108F7-52D1-4320-9BAC-F847DB4148A8}",
+  ]
+
+  for input in inputs {
+    match @moonuuid.parse_permissive(input) {
+      Err(_) => fail("permissive UUID form must parse")
+      Ok(uuid) => assert_eq(@moonuuid.to_string(uuid), expected)
+    }
+  }
+}
+
+///|
+test "permissive parse rejects malformed wrappers" {
+  assert_false(
+    @moonuuid.is_valid_permissive("[919108f7-52d1-4320-9bac-f847db4148a8]"),
+  )
+  assert_false(
+    @moonuuid.is_valid_permissive("xxx:uuid:919108f7-52d1-4320-9bac-f847db4148a8"),
+  )
+}
+
+///|
+test "text format helpers emit stable interoperable forms" {
+  match @moonuuid.parse("919108f7-52d1-4320-9bac-f847db4148a8") {
+    Err(_) => fail("UUID must parse")
+    Ok(uuid) => {
+      assert_eq(
+        @moonuuid.to_urn(uuid),
+        "urn:uuid:919108f7-52d1-4320-9bac-f847db4148a8",
+      )
+      assert_eq(
+        @moonuuid.to_braced_string(uuid),
+        "{919108f7-52d1-4320-9bac-f847db4148a8}",
+      )
+    }
+  }
+}
+
+///|
+test "UUID round trips through 16 network-order bytes" {
+  let expected = b"\x91\x91\x08\xf7\x52\xd1\x43\x20\x9b\xac\xf8\x47\xdb\x41\x48\xa8"
+
+  match @moonuuid.parse("919108f7-52d1-4320-9bac-f847db4148a8") {
+    Err(_) => fail("UUID must parse")
+    Ok(uuid) => {
+      assert_eq(@moonuuid.to_bytes(uuid), expected)
+      match @moonuuid.from_bytes(expected) {
+        Err(_) => fail("16-byte UUID must decode")
+        Ok(decoded) => assert_eq(decoded, uuid)
+      }
+    }
+  }
+}
+
+///|
+test "binary decoder requires exactly 16 bytes" {
+  match @moonuuid.from_bytes(b"123456789012345") {
+    Ok(_) => fail("15 bytes must be rejected")
+    Err(_) => ()
+  }
+  match @moonuuid.from_bytes(b"12345678901234567") {
+    Ok(_) => fail("17 bytes must be rejected")
+    Err(_) => ()
+  }
 }
 
 ///|
