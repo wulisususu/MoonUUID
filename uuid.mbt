@@ -7,6 +7,10 @@ pub struct Uuid {
   low : UInt64
 } derive(Eq, Compare, Hash)
 
+pub extend Uuid with Eq::{not_equal, equal}
+pub extend Uuid with Compare::{op_lt, op_le, op_ge, compare, op_gt}
+pub extend Uuid with Hash::{hash, hash_combine}
+
 ///|
 /// UUID layout variant as defined by RFC 9562 section 4.1.
 pub(all) enum Variant {
@@ -16,6 +20,8 @@ pub(all) enum Variant {
   Future
 } derive(Eq)
 
+pub extend Variant with Eq::{not_equal, equal}
+
 ///|
 /// Error returned when parsing the canonical 8-4-4-4-12 UUID text form.
 pub(all) enum ParseError {
@@ -23,6 +29,8 @@ pub(all) enum ParseError {
   InvalidHyphen(Int)
   InvalidHexDigit(Int)
 } derive(Eq)
+
+pub extend ParseError with Eq::{not_equal, equal}
 
 ///|
 /// Construct a UUID directly from its high and low 64-bit words.
