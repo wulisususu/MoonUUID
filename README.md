@@ -91,7 +91,7 @@ let next_id = generator.next()
 
 ## Realistic integration examples
 
-Runnable examples live under [examples/](examples/):
+Runnable examples live under [examples/](examples/) and are retained in the Mooncakes publication archive:
 
 - **Web request ID** — generate UUIDv7 for an `X-Request-ID` style correlation identifier.
 - **Database key** — generate a monotonic sequence of UUIDv7 values for index-friendly ordered keys.
@@ -178,7 +178,7 @@ That boundary keeps the package useful to all of those higher-level systems with
 
 ## Release status
 
-`0.1.0` is the first release candidate. Packaging metadata, archive filtering, examples, API documentation, benchmarks and the release checklist are in-repository before the first Mooncakes publication.
+`0.1.0` is the first release candidate. Packaging metadata, archive filtering, examples, API documentation, benchmarks and the release checklist are in-repository before the first Mooncakes publication. The release-readiness workflow also verifies the package file list and uploads the generated Mooncakes candidate ZIP as a CI artifact.
 
 See [docs/RELEASE.md](docs/RELEASE.md).
 

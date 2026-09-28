@@ -68,8 +68,20 @@ jobs:
       - name: Public interface
         run: moon info --target native
 
-      - name: Package contents
-        run: moon package --list
+      - name: Verify package contents
+        shell: bash
+        run: |
+          moon package --list | tee package-list.txt
+          grep -q '^README.md$' package-list.txt
+          grep -q '^docs/API.md$' package-list.txt
+          grep -q '^examples/web_request_id/main.mbt$' package-list.txt
+          grep -q '^examples/database_key/main.mbt$' package-list.txt
+          grep -q '^examples/deterministic_resource_id/main.mbt$' package-list.txt
+          grep -q '^examples/interop/main.mbt$' package-list.txt
+          if grep -Eq '^benchmarks/|^\.github/' package-list.txt; then
+            echo "development-only files leaked into the Mooncakes archive"
+            exit 1
+          fi
 
       - name: Run examples
         run: |
@@ -80,6 +92,14 @@ jobs:
 
       - name: Native release benchmarks
         run: moon bench benchmarks --release --target native --deny-warn
+
+      - name: Upload Mooncakes candidate archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: moonuuid-0.1.0-package
+          path: _build/publish/*.zip
+          if-no-files-found: error
+          retention-days: 14
 
   native-windows:
     runs-on: windows-latest
