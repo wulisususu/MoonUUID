@@ -21,3 +21,5 @@ Initial release candidate.
 - SHA-256 name-based UUIDv8 illustrative profile.
 - DNS, URL, OID and X.500 namespace UUIDs.
 - RFC conformance tests, multi-backend CI, examples and benchmarks.
+- Ecosystem differentiation and backend compatibility documentation.
+- Property-style deterministic corpus tests for text/binary round trips and monotonic UUIDv7 ordering.
