@@ -1,6 +1,6 @@
 ///|
-fn namespaced_name_bytes(namespace : Uuid, name : Bytes) -> FixedArray[Byte] {
-  let namespace_bytes = to_bytes(namespace)
+fn namespaced_name_bytes(ns : Uuid, name : Bytes) -> FixedArray[Byte] {
+  let namespace_bytes = to_bytes(ns)
   let output = FixedArray::make(16 + name.length(), b'\x00')
 
   for i = 0; i < 16; i = i + 1 {
@@ -43,8 +43,8 @@ fn uuid_from_hash_prefix(
 ///
 /// UUIDv3 uses MD5 for compatibility with the standardized name-based format.
 /// This API does not treat MD5 as a general-purpose security primitive.
-pub fn v3(namespace : Uuid, name : Bytes) -> Uuid {
-  let input = namespaced_name_bytes(namespace, name)
+pub fn v3(ns : Uuid, name : Bytes) -> Uuid {
+  let input = namespaced_name_bytes(ns, name)
   uuid_from_hash_prefix(@crypto.md5(input), 3)
 }
 
@@ -53,8 +53,8 @@ pub fn v3(namespace : Uuid, name : Bytes) -> Uuid {
 ///
 /// Name canonicalization is namespace/application specific and remains the
 /// caller's responsibility.
-pub fn v3_string(namespace : Uuid, name : String) -> Uuid {
-  v3(namespace, @utf8.encode(name))
+pub fn v3_string(ns : Uuid, name : String) -> Uuid {
+  v3(ns, @utf8.encode(name))
 }
 
 ///|
@@ -63,8 +63,8 @@ pub fn v3_string(namespace : Uuid, name : String) -> Uuid {
 /// UUIDv5 uses SHA-1 because that algorithm is part of the standardized UUIDv5
 /// format. This API should not be interpreted as recommending SHA-1 for new
 /// cryptographic designs.
-pub fn v5(namespace : Uuid, name : Bytes) -> Uuid {
-  let input = namespaced_name_bytes(namespace, name)
+pub fn v5(ns : Uuid, name : Bytes) -> Uuid {
+  let input = namespaced_name_bytes(ns, name)
   uuid_from_hash_prefix(@crypto.sha1(input), 5)
 }
 
@@ -73,8 +73,8 @@ pub fn v5(namespace : Uuid, name : Bytes) -> Uuid {
 ///
 /// Name canonicalization is namespace/application specific and remains the
 /// caller's responsibility.
-pub fn v5_string(namespace : Uuid, name : String) -> Uuid {
-  v5(namespace, @utf8.encode(name))
+pub fn v5_string(ns : Uuid, name : String) -> Uuid {
+  v5(ns, @utf8.encode(name))
 }
 
 ///|
@@ -83,13 +83,13 @@ pub fn v5_string(namespace : Uuid, name : String) -> Uuid {
 /// RFC 9562 defines UUIDv8 as application-specific. This helper follows the
 /// document's illustrative SHA-256 construction: hash namespace bytes followed
 /// by name bytes, take the first 128 hash bits, then overwrite version/variant.
-pub fn v8_sha256(namespace : Uuid, name : Bytes) -> Uuid {
-  let input = namespaced_name_bytes(namespace, name)
+pub fn v8_sha256(ns : Uuid, name : Bytes) -> Uuid {
+  let input = namespaced_name_bytes(ns, name)
   uuid_from_hash_prefix(@crypto.sha256(input), 8)
 }
 
 ///|
 /// UTF-8 string convenience wrapper for the illustrative SHA-256 UUIDv8 profile.
-pub fn v8_sha256_string(namespace : Uuid, name : String) -> Uuid {
-  v8_sha256(namespace, @utf8.encode(name))
+pub fn v8_sha256_string(ns : Uuid, name : String) -> Uuid {
+  v8_sha256(ns, @utf8.encode(name))
 }
