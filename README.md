@@ -186,7 +186,7 @@ That boundary keeps the package useful to all of those higher-level systems with
 
 ## Release status
 
-`0.1.0` is the first release candidate. Packaging metadata, archive filtering, examples, API documentation, benchmarks and the release checklist are in-repository before the first Mooncakes publication. The release-readiness workflow also verifies the package file list and uploads the generated Mooncakes candidate ZIP as a CI artifact.
+`0.1.0` is the first release candidate. Packaging metadata, archive filtering, examples, API documentation, benchmarks and the release checklist are in-repository before the first Mooncakes publication. The release-readiness workflow verifies the package file list and uploads the generated Mooncakes candidate ZIP as a CI artifact. A separate guarded `publish` workflow performs the authenticated Mooncakes release, then verifies a clean external registry install before creating GitHub Release `v0.1.0`.
 
 See [docs/RELEASE.md](docs/RELEASE.md).
 

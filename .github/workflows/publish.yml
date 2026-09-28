@@ -1,0 +1,155 @@
+name: publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: Type publish-0.1.0 to publish MoonUUID 0.1.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  MOONBIT_VERSION: 0.10.14+7d59c7ec9
+  MODULE_NAME: wulisususu/moonuuid
+  MODULE_VERSION: 0.1.0
+
+jobs:
+  publish:
+    if: ${{ inputs.confirm == 'publish-0.1.0' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL \
+            https://cli.moonbitlang.com/install/unix.sh \
+            | bash -s "$MOONBIT_VERSION"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Show toolchain
+        run: moon version --all
+
+      - name: Resolve dependencies
+        run: moon update
+
+      - name: Verify release source
+        shell: bash
+        run: |
+          grep -q '^name = "wulisususu/moonuuid"$' moon.mod
+          grep -q '^version = "0.1.0"$' moon.mod
+          moon fmt --check
+          moon check --target native --deny-warn
+          moon test --target native
+          moon info --target native
+
+      - name: Verify publication archive
+        shell: bash
+        run: |
+          PACKAGE_LIST="$RUNNER_TEMP/moonuuid-package-list.txt"
+          moon package --frozen --list 2>&1 | tee "$PACKAGE_LIST"
+          grep -q '^README.md$' "$PACKAGE_LIST"
+          grep -q '^LICENSE$' "$PACKAGE_LIST"
+          grep -q '^docs/API.md$' "$PACKAGE_LIST"
+          grep -q '^docs/DIFFERENTIATION.md$' "$PACKAGE_LIST"
+          grep -q '^docs/COMPATIBILITY.md$' "$PACKAGE_LIST"
+          grep -q '^examples/web_request_id/main.mbt$' "$PACKAGE_LIST"
+          grep -q '^examples/database_key/main.mbt$' "$PACKAGE_LIST"
+          grep -q '^examples/deterministic_resource_id/main.mbt$' "$PACKAGE_LIST"
+          grep -q '^examples/interop/main.mbt$' "$PACKAGE_LIST"
+          if grep -Eq '^benchmarks/|^\.github/' "$PACKAGE_LIST"; then
+            echo "development-only files leaked into the Mooncakes archive"
+            exit 1
+          fi
+
+      - name: Publish to Mooncakes
+        shell: bash
+        env:
+          MOONCAKES_TOKEN: ${{ secrets.MOONCAKES_TOKEN }}
+        run: |
+          if [ -z "${MOONCAKES_TOKEN:-}" ]; then
+            echo "::error::Repository secret MOONCAKES_TOKEN is not configured."
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.moon"
+          umask 077
+          printf '{"username":"wulisususu","token":"%s"}\n' "$MOONCAKES_TOKEN" > "$HOME/.moon/credentials.json"
+          trap 'rm -f "$HOME/.moon/credentials.json"' EXIT
+
+          moon publish --frozen
+
+      - name: Smoke test registry installation
+        shell: bash
+        run: |
+          SMOKE="$RUNNER_TEMP/moonuuid-registry-smoke"
+          mkdir -p "$SMOKE/cmd/main"
+
+          cat > "$SMOKE/moon.mod" <<'EOF'
+          name = "smoke/moonuuid-consumer"
+
+          version = "0.0.0"
+
+          import {
+            "wulisususu/moonuuid@0.1.0",
+          }
+          EOF
+
+          cat > "$SMOKE/cmd/main/moon.pkg" <<'EOF'
+          import {
+            "wulisususu/moonuuid" @uuid,
+          }
+
+          pkgtype(kind: "executable")
+          EOF
+
+          cat > "$SMOKE/cmd/main/main.mbt" <<'EOF'
+          ///|
+          fn main {
+            let value = "017f22e2-79b0-7cc3-98c4-dc0c0c07398f"
+            match @uuid.parse(value) {
+              Err(_) => abort("registry-installed MoonUUID failed to parse RFC vector")
+              Ok(id) => {
+                if @uuid.to_string(id) != value {
+                  abort("registry-installed MoonUUID failed canonical round trip")
+                }
+                println(@uuid.to_string(id))
+              }
+            }
+          }
+          EOF
+
+          cd "$SMOKE"
+          moon update
+          moon check --target native --deny-warn
+          moon run cmd/main --target native
+
+      - name: Create GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v$MODULE_VERSION" >/dev/null 2>&1; then
+            echo "GitHub release v$MODULE_VERSION already exists; leaving it unchanged."
+            exit 0
+          fi
+
+          gh release create "v$MODULE_VERSION" \
+            --target "$GITHUB_SHA" \
+            --title "MoonUUID v$MODULE_VERSION" \
+            --notes-file - <<'EOF'
+          First public release of MoonUUID.
+
+          Highlights:
+          - RFC 9562 UUID v3, v4, v5, v6, v7 and v8 support
+          - secure default entropy with no weak-random fallback
+          - injectable clock and entropy providers
+          - monotonic UUIDv7 with clock-rollback and overflow handling
+          - canonical, URN, braced and 16-byte interoperability
+          - wasm, wasm-gc, JavaScript, Linux native and Windows native CI
+          EOF

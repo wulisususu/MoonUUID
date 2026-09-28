@@ -76,12 +76,37 @@ Use `moon register` for a new account or `moon login` for an existing one.
 The CLI stores the API token outside the repository; credentials must never be
 committed.
 
+For repository publishing, store only the raw Mooncakes token in the GitHub
+Actions repository secret `MOONCAKES_TOKEN`. The manual publish workflow writes
+the temporary `~/.moon/credentials.json` file with owner `wulisususu`, runs
+the release, and removes the credential file before the step exits.
+
 ## Publish
 
-After version/changelog review and green CI:
+The preferred release path is the manual GitHub Actions workflow
+`.github/workflows/publish.yml`.
+
+It requires the confirmation string:
+
+```text
+publish-0.1.0
+```
+
+The workflow then:
+
+1. checks the pinned MoonBit toolchain and release metadata;
+2. runs native formatting/check/test/interface verification;
+3. verifies the exact Mooncakes archive contents;
+4. publishes with `moon publish --frozen`;
+5. creates a clean external consumer module and installs
+   `wulisususu/moonuuid@0.1.0` from the registry;
+6. checks and runs that consumer;
+7. creates GitHub Release/tag `v0.1.0` only after the registry smoke test passes.
+
+Local publication remains possible after `moon login`:
 
 ```bash
-moon publish
+moon publish --frozen
 ```
 
 The current MoonBit CLI documentation lists `--frozen` for `moon publish`
@@ -91,17 +116,20 @@ inspection path rather than relying on an undocumented flag.
 
 ## Post-publish smoke test
 
+The publish workflow performs the registry smoke test automatically. For a
+manual verification:
+
 ```bash
-moon new moonuuid-smoke
-cd moonuuid-smoke
+moon update
 moon add wulisususu/moonuuid@0.1.0
 ```
 
-Import `wulisususu/moonuuid`, generate or parse one UUID, and run
-`moon check`.
+A successful registry install is not considered enough by itself: the workflow
+also compiles and runs a fresh consumer that imports `wulisususu/moonuuid`,
+parses an RFC UUIDv7 vector, and verifies its canonical round trip.
 
 ## GitHub release
 
-After Mooncakes publication succeeds, tag the exact commit as `v0.1.0`, create
-a GitHub Release, and keep the Mooncakes version, Git tag and `moon.mod`
-version identical.
+The exact commit that successfully publishes and passes the external registry
+smoke test is released as `v0.1.0`. The workflow keeps the Mooncakes version,
+Git tag/GitHub Release and `moon.mod` version aligned.
