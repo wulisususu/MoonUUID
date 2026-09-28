@@ -1,7 +1,4 @@
 import {
   "wulisususu/moonuuid" @uuid,
-}
-
-import {
   "moonbitlang/core/bench",
 } for "test"
