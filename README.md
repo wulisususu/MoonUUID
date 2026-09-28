@@ -2,191 +2,185 @@
 
 [![CI](https://github.com/wulisususu/MoonUUID/actions/workflows/ci.yml/badge.svg)](https://github.com/wulisususu/MoonUUID/actions/workflows/ci.yml)
 
-**MoonUUID** is an RFC 9562 UUID library for MoonBit.
+**RFC 9562 UUID infrastructure for MoonBit.**  
+UUIDv3 / v4 / v5 / v6 / v7 / v8, monotonic UUIDv7, secure platform entropy, deterministic provider injection, binary/text interoperability, and multi-backend CI.
 
-The goal is deliberately concrete: provide the UUID primitives that Web services, databases, distributed systems, CLI tools, event pipelines and application frameworks repeatedly need, with one portable MoonBit API across `wasm`, `wasm-gc`, `js` and `native`.
+MoonUUID is designed as a reusable ecosystem library rather than an application-specific framework. Typical consumers are Web services, database layers, event systems, CLIs, storage adapters and distributed applications that need a stable UUID primitive.
 
-Reference standard: [RFC 9562 — Universally Unique IDentifiers (UUIDs)](https://www.rfc-editor.org/rfc/rfc9562.html).
+- Standard: [RFC 9562](https://www.rfc-editor.org/rfc/rfc9562.html)
+- Module: `wulisususu/moonuuid`
+- Version: `0.1.0`
+- License: Apache-2.0
+- Targets: `wasm`, `wasm-gc`, `js`, `native`
 
-## Current status
+## Install
 
-v0.1 foundation:
+After the first Mooncakes release:
 
-- 128-bit `Uuid` value represented by two `UInt64` words;
-- strict canonical `8-4-4-4-12` parser;
-- permissive parser for canonical, compact, UUID URN and braced forms;
-- lowercase canonical, URN and braced formatting;
-- exact 16-byte network-order encode/decode;
-- UUID variant detection and RFC-layout version extraction;
-- Nil UUID and Max UUID;
-- UUIDv4 generation from secure platform entropy;
-- UUIDv7 generation with 48-bit Unix-millisecond timestamps;
-- injectable clock and entropy providers;
-- stateful monotonic UUIDv7 generation with rollback handling;
-- RFC UUIDv6 field construction and inspection;
-- RFC UUIDv8 custom field construction;
-- UUIDv3 (MD5) and UUIDv5 (SHA-1) name-based generation;
-- RFC Appendix B SHA-256 name-based UUIDv8 profile;
-- standard DNS / URL / OID / X.500 namespace UUIDs;
-- no weak-random fallback when secure entropy is unavailable;
-- equality / ordering / hashing support;
-- RFC 9562 Appendix A UUIDv4 and UUIDv7 test vectors;
-- CI on `wasm`, `wasm-gc`, `js`, Linux native and Windows native.
+```bash
+moon add wulisususu/moonuuid@0.1.0
+```
+
+Import the root package:
+
+```moonbit
+import {
+  "wulisususu/moonuuid" @uuid
+}
+```
 
 ## Quick start
 
-Generate UUIDv4:
+Generate a time-ordered UUIDv7:
 
 ```moonbit
-match @moonuuid.v4() {
-  Ok(id) => println(@moonuuid.to_string(id))
+match @uuid.v7() {
+  Ok(id) => println(@uuid.to_string(id))
   Err(_) => println("secure entropy unavailable")
 }
 ```
 
-Generate time-ordered UUIDv7:
+Generate deterministic resource IDs:
 
 ```moonbit
-match @moonuuid.v7() {
-  Ok(id) => println(@moonuuid.to_string(id))
-  Err(_) => println("UUIDv7 unavailable")
-}
+let id = @uuid.v5_string(
+  @uuid.namespace_url(),
+  "https://example.com/users/42",
+)
+println(@uuid.to_string(id))
 ```
 
-For strict generation-order monotonicity:
+Parse transport/storage forms without weakening the strict parser:
 
 ```moonbit
-let generator = @moonuuid.V7Generator::new()
+let strict = @uuid.parse(
+  "017f22e2-79b0-7cc3-98c4-dc0c0c07398f",
+)
+
+let interoperable = @uuid.parse_permissive(
+  "urn:uuid:017f22e2-79b0-7cc3-98c4-dc0c0c07398f",
+)
+```
+
+For strict generation-order monotonicity inside one process:
+
+```moonbit
+let generator = @uuid.V7Generator::new()
 let next_id = generator.next()
 ```
 
-Strict canonical parsing:
+## What is implemented
 
-```moonbit
-match @moonuuid.parse("017F22E2-79B0-7CC3-98C4-DC0C0C07398F") {
-  Ok(id) => {
-    println(@moonuuid.to_string(id))
-    // 017f22e2-79b0-7cc3-98c4-dc0c0c07398f
+| Capability | Status | Main API |
+| --- | --- | --- |
+| Canonical parse/format | ✅ | `parse`, `to_string` |
+| Compact / URN / braced text | ✅ | `parse_permissive`, `to_urn`, `to_braced_string` |
+| 16-byte network-order interop | ✅ | `to_bytes`, `from_bytes` |
+| UUIDv3 | ✅ | `v3`, `v3_string` |
+| UUIDv4 | ✅ | `v4`, `v4_with_entropy`, `v4_from_entropy` |
+| UUIDv5 | ✅ | `v5`, `v5_string` |
+| UUIDv6 | ✅ | `v6_from_parts` |
+| UUIDv7 | ✅ | `v7`, `v7_with`, `v7_from_parts` |
+| Monotonic UUIDv7 | ✅ | `V7Generator` |
+| UUIDv8 custom fields | ✅ | `v8_from_parts` |
+| SHA-256 UUIDv8 profile | ✅ | `v8_sha256`, `v8_sha256_string` |
+| Standard namespaces | ✅ | DNS / URL / OID / X.500 |
+| Nil / Max / version / variant | ✅ | inspection helpers |
+| RFC vectors | ✅ | v3 / v4 / v5 / v6 / v7 / v8 |
+| Cross-target CI | ✅ | wasm / wasm-gc / js / Linux native / Windows native |
 
-    println(@moonuuid.version(id))
-    // Some(7)
-  }
-  Err(_) => println("invalid UUID")
-}
+## Realistic integration examples
+
+Runnable examples live under [examples/](examples/):
+
+- **Web request ID** — generate UUIDv7 for an `X-Request-ID` style correlation identifier.
+- **Database key** — generate a monotonic sequence of UUIDv7 values for index-friendly ordered keys.
+- **Deterministic resource ID** — derive the same UUIDv5 from the same namespace and logical resource name.
+- **Wire interoperability** — accept a UUID URN and round-trip it through the 16-byte representation.
+
+Run them with:
+
+```bash
+moon run examples/web_request_id --target native
+moon run examples/database_key --target native
+moon run examples/deterministic_resource_id --target native
+moon run examples/interop --target native
 ```
 
-Interoperability parsing:
+## UUIDv7 safety model
 
-```moonbit
-let id = @moonuuid.parse_permissive(
-  "urn:uuid:919108f7-52d1-4320-9bac-f847db4148a8",
-)
+`v7()` uses MoonBit's wall clock and secure platform entropy. It does not silently substitute `Math.random`, a timestamp-only value or another weak PRNG.
 
-let compact = @moonuuid.parse_permissive(
-  "919108f752d143209bacf847db4148a8",
-)
+`V7Generator` additionally handles:
+
+- multiple IDs in the same millisecond;
+- clock rollback;
+- `rand_b` carry into `rand_a`;
+- explicit overflow instead of knowingly producing duplicate/non-monotonic output.
+
+Provider-injected APIs keep the bit-layout logic deterministic and testable.
+
+## Portability
+
+CI checks the same public library across:
+
+- WebAssembly;
+- WebAssembly GC;
+- JavaScript;
+- Linux native;
+- Windows native.
+
+Secure entropy availability is runtime-dependent. If a target cannot provide secure entropy, random generation returns an explicit error while deterministic parsing, formatting, name-based UUIDs and field constructors continue to work.
+
+## Benchmarks
+
+MoonUUID includes release-mode microbenchmarks for canonical parsing, canonical formatting, UUIDv4 construction, UUIDv5 derivation and UUIDv7 construction.
+
+```bash
+moon bench benchmarks --release --target native --deny-warn
 ```
 
-Binary round trip:
+See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) for methodology and the recorded CI baseline.
 
-```moonbit
-match @moonuuid.parse("919108f7-52d1-4320-9bac-f847db4148a8") {
-  Ok(id) => {
-    let bytes : Bytes = @moonuuid.to_bytes(id)
-    let decoded = @moonuuid.from_bytes(bytes)
-    ignore(decoded)
-  }
-  Err(_) => ()
-}
+## Documentation
+
+- [API reference](docs/API.md)
+- [Text and binary formats](docs/FORMATS.md)
+- [UUIDv4 generation](docs/V4.md)
+- [UUIDv7 and monotonic generation](docs/V7.md)
+- [UUIDv6 / UUIDv8](docs/V6_V8.md)
+- [Name-based UUIDs](docs/NAME_BASED.md)
+- [Benchmarks](docs/BENCHMARKS.md)
+- [Release / Mooncakes checklist](docs/RELEASE.md)
+- [Contest reviewer guide](docs/CONTEST.md)
+
+## Verification
+
+The repository CI runs:
+
+```bash
+moon fmt --check
+moon check --target <wasm|wasm-gc|js|native> --deny-warn
+moon test --target <wasm|wasm-gc|js|native>
+moon build --target <wasm|wasm-gc|js|native>
+moon info --target native
+moon package --list
+moon bench benchmarks --release --target native --deny-warn
 ```
 
-## Why this project
-
-UUID is infrastructure, not an application-specific abstraction. Typical consumers include:
-
-- request / correlation IDs in Web APIs;
-- database primary keys and object IDs;
-- event and message identifiers;
-- trace identifiers;
-- durable IDs in CLI and developer tools;
-- framework and library internals.
-
-RFC 9562 supersedes RFC 4122 and defines the current UUID layout, variants, versions, Nil / Max values, and UUIDv6 / UUIDv7 / UUIDv8.
-
-## Generation safety
-
-`v4()` delegates to MoonBit's platform secure entropy API `@env.rand`.
-
-If the current runtime cannot supply secure entropy, generation returns `EntropyUnavailable`; MoonUUID does **not** fall back to `Math.random`, timestamps or another weak source.
-
-For custom hosts and reproducible testing, use `v4_with_entropy(provider)` or the deterministic `v4_from_entropy(bytes)`.
-
-UUIDv7 follows the same provider model through `v7_with(clock, entropy)`. Its stateful `V7Generator` preserves strict ordering across same-millisecond calls and clock rollback by reusing the previous timestamp and incrementing the random payload.
-
-More details: [docs/V4.md](docs/V4.md), [docs/V7.md](docs/V7.md), [docs/V6_V8.md](docs/V6_V8.md), and [docs/NAME_BASED.md](docs/NAME_BASED.md).
-
-## Text formats
-
-MoonUUID deliberately exposes two parsing modes:
-
-| API | Accepted input |
-| --- | --- |
-| `parse` | canonical `8-4-4-4-12` only |
-| `parse_permissive` | canonical, 32-hex compact, `urn:uuid:`, `{canonical}` |
-
-More details: [docs/FORMATS.md](docs/FORMATS.md).
-
-## Roadmap
-
-### Gate 1 — Core representation and codec
-
-- [x] `Uuid` 128-bit representation
-- [x] canonical parser
-- [x] canonical formatter
-- [x] variant / version inspection
-- [x] Nil / Max
-- [x] RFC conformance vectors
-
-### Gate 2 — Binary and text interoperability
-
-- [x] 16-byte conversion
-- [x] URN form
-- [x] braced form parsing and formatting
-- [x] compact 32-hex parsing
-- [x] strict vs permissive parsing modes
-
-### Gate 3 — UUIDv4
-
-- [x] entropy-provider interface
-- [x] UUIDv4 bit layout
-- [x] deterministic test entropy source
-- [x] platform secure-entropy adapter via `@env.rand`
-- [x] explicit unsupported-runtime failure without weak fallback
-
-### Gate 4 — UUIDv7
-
-- [x] 48-bit Unix-millisecond timestamp encoding
-- [x] random `rand_a` / `rand_b`
-- [x] injectable clock and entropy providers
-- [x] platform `@env.now` / `@env.rand` adapter
-- [x] monotonic same-millisecond generation
-- [x] clock rollback handling
-- [x] counter rollover guard
-- [x] RFC 9562 Appendix A conformance
-
-### Gate 5 — Wider RFC 9562 coverage
-
-- [x] UUIDv3 / UUIDv5 namespace generation
-- [x] UUIDv6 construction / inspection
-- [x] UUIDv8 construction primitives
-- [x] standard namespace constants
-- [x] illustrative SHA-256 name-based UUIDv8 profile
+Windows native is checked and tested separately.
 
 ## Scope
 
-MoonUUID is a UUID library. It is not an ORM, database, distributed-ID service, tracing framework, or workflow engine.
+MoonUUID is intentionally a UUID foundation library. It is not an ORM, database, tracing framework, distributed-ID service or workflow engine.
 
-The deterministic codec and bit-layout logic remains portable. Runtime entropy enters only through an explicit provider boundary.
+That boundary keeps the package useful to all of those higher-level systems without coupling it to any one of them.
+
+## Release status
+
+`0.1.0` is the first release candidate. Packaging metadata, archive filtering, examples, API documentation, benchmarks and the release checklist are in-repository before the first Mooncakes publication.
+
+See [docs/RELEASE.md](docs/RELEASE.md).
 
 ## License
 

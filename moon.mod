@@ -10,11 +10,19 @@ readme = "README.md"
 
 repository = "https://github.com/wulisususu/MoonUUID"
 
+homepage = "https://github.com/wulisususu/MoonUUID"
+
 license = "Apache-2.0"
 
-keywords = [ "uuid", "rfc9562", "identifier", "moonbit" ]
+keywords = [
+  "uuid",
+  "uuidv7",
+  "rfc9562",
+  "identifier",
+  "moonbit",
+]
 
-description = "RFC 9562 UUID parsing, formatting and generation primitives for MoonBit"
+description = "RFC 9562 UUID library for MoonBit with v3-v8, monotonic v7, secure generation, and binary/text interop"
 
 preferred_target = "native"
 

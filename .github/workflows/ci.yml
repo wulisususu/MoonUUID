@@ -42,6 +42,45 @@ jobs:
       - name: Build
         run: moon build --target ${{ matrix.target }}
 
+  release-readiness:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install MoonBit
+        shell: bash
+        run: |
+          curl --retry 3 --retry-all-errors --retry-delay 3 -fsSL \
+            https://cli.moonbitlang.com/install/unix.sh \
+            | bash -s "$MOONBIT_VERSION"
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Show toolchain
+        run: moon version --all
+
+      - name: Resolve dependencies
+        run: moon update
+
+      - name: Formatting
+        run: moon fmt --check
+
+      - name: Public interface
+        run: moon info --target native
+
+      - name: Package contents
+        run: moon package --list
+
+      - name: Run examples
+        run: |
+          moon run examples/web_request_id --target native
+          moon run examples/database_key --target native
+          moon run examples/deterministic_resource_id --target native
+          moon run examples/interop --target native
+
+      - name: Native release benchmarks
+        run: moon bench benchmarks --release --target native --deny-warn
+
   native-windows:
     runs-on: windows-latest
 

@@ -1,0 +1,4 @@
+# Development-only material excluded from Mooncakes archives.
+/.github/
+/examples/
+/benchmarks/
