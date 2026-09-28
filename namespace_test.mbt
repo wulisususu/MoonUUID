@@ -1,0 +1,19 @@
+///|
+test "standard RFC namespace UUID constants" {
+  assert_eq(
+    @moonuuid.to_string(@moonuuid.namespace_dns()),
+    "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+  )
+  assert_eq(
+    @moonuuid.to_string(@moonuuid.namespace_url()),
+    "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+  )
+  assert_eq(
+    @moonuuid.to_string(@moonuuid.namespace_oid()),
+    "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+  )
+  assert_eq(
+    @moonuuid.to_string(@moonuuid.namespace_x500()),
+    "6ba7b814-9dad-11d1-80b4-00c04fd430c8",
+  )
+}

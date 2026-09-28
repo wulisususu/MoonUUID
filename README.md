@@ -23,6 +23,9 @@ v0.1 foundation:
 - UUIDv7 generation with 48-bit Unix-millisecond timestamps;
 - injectable clock and entropy providers;
 - stateful monotonic UUIDv7 generation with rollback handling;
+- RFC UUIDv6 field construction and inspection;
+- RFC UUIDv8 custom field construction;
+- standard DNS / URL / OID / X.500 namespace UUIDs;
 - no weak-random fallback when secure entropy is unavailable;
 - equality / ordering / hashing support;
 - RFC 9562 Appendix A UUIDv4 and UUIDv7 test vectors;
@@ -118,7 +121,7 @@ For custom hosts and reproducible testing, use `v4_with_entropy(provider)` or th
 
 UUIDv7 follows the same provider model through `v7_with(clock, entropy)`. Its stateful `V7Generator` preserves strict ordering across same-millisecond calls and clock rollback by reusing the previous timestamp and incrementing the random payload.
 
-More details: [docs/V4.md](docs/V4.md) and [docs/V7.md](docs/V7.md).
+More details: [docs/V4.md](docs/V4.md), [docs/V7.md](docs/V7.md), and [docs/V6_V8.md](docs/V6_V8.md).
 
 ## Text formats
 
@@ -172,9 +175,9 @@ More details: [docs/FORMATS.md](docs/FORMATS.md).
 ### Gate 5 — Wider RFC 9562 coverage
 
 - [ ] UUIDv3 / UUIDv5 namespace generation
-- [ ] UUIDv6
-- [ ] UUIDv8 construction primitives
-- [ ] standard namespace constants
+- [x] UUIDv6 construction / inspection
+- [x] UUIDv8 construction primitives
+- [x] standard namespace constants
 
 ## Scope
 
