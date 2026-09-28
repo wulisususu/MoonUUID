@@ -20,6 +20,7 @@ jobs:
   publish:
     if: ${{ inputs.confirm == 'publish-0.1.0' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v5
@@ -43,8 +44,17 @@ jobs:
         run: |
           grep -q '^name = "wulisususu/moonuuid"$' moon.mod
           grep -q '^version = "0.1.0"$' moon.mod
+
+          # `moon update` must not move the pinned dependency graph.
+          git diff --exit-code -- moon.mod
+
           moon fmt --check
+
+          # First pass installs exactly the dependency set pinned in moon.mod ...
           moon check --target native --deny-warn
+          # ... the frozen pass then proves no further dependency sync is needed.
+          moon check --frozen --target native --deny-warn
+
           moon test --target native
           moon info --target native
 
@@ -82,25 +92,66 @@ jobs:
           printf '{"username":"wulisususu","token":"%s"}\n' "$MOONCAKES_TOKEN" > "$HOME/.moon/credentials.json"
           trap 'rm -f "$HOME/.moon/credentials.json"' EXIT
 
-          moon publish --frozen
+          # A published Mooncakes version is immutable, so a re-run after a later
+          # step failed must continue with the smoke test instead of aborting here.
+          if moon view "$MODULE_NAME@$MODULE_VERSION" >/dev/null 2>&1; then
+            echo "::warning::$MODULE_NAME@$MODULE_VERSION is already published; skipping the upload."
+            exit 0
+          fi
+
+          # NOTE: `moon publish --frozen` cannot be used for this module.
+          # `moon publish` re-verifies the packaged archive by extracting it into
+          # an empty directory and running `moon check` there. That fresh project
+          # has an empty `.mooncakes`, so the pinned registry dependency
+          # (`moonbitlang/x@0.5.5`) still has to be installed, and `--frozen`
+          # forbids exactly that. The run then dies inside the CLI's own
+          # verification step (exit code 255) before anything is uploaded.
+          # The frozen build plan is asserted by `moon check --frozen` and
+          # `moon package --frozen --list` above instead, so the published
+          # archive is still produced from the frozen, pinned dependency set.
+          PUBLISH_LOG="$RUNNER_TEMP/moon-publish.log"
+          if ! moon publish 2>&1 | tee "$PUBLISH_LOG"; then
+            echo "::error::moon publish failed: $(tail -n 4 "$PUBLISH_LOG" | tr '\n' ' ')"
+            exit 1
+          fi
 
       - name: Smoke test registry installation
         shell: bash
         run: |
           SMOKE="$RUNNER_TEMP/moonuuid-registry-smoke"
-          mkdir -p "$SMOKE/cmd/main"
+          rm -rf "$SMOKE"
+          mkdir -p "$SMOKE"
+          cd "$SMOKE"
 
-          cat > "$SMOKE/moon.mod" <<'EOF'
-          name = "smoke/moonuuid-consumer"
+          cat > moon.mod <<'EOF'
+          name = "smoke/moonuuid_consumer"
 
           version = "0.0.0"
-
-          import {
-            "wulisususu/moonuuid@0.1.0",
-          }
           EOF
+          cp moon.mod moon.mod.pristine
 
-          cat > "$SMOKE/cmd/main/moon.pkg" <<'EOF'
+          # The registry index can lag a few seconds behind a successful publish,
+          # so retry the real consumer install path instead of failing a release
+          # whose module is already live.
+          installed=0
+          for attempt in $(seq 1 12); do
+            if moon add "$MODULE_NAME@$MODULE_VERSION"; then
+              installed=1
+              break
+            fi
+            cp moon.mod.pristine moon.mod
+            echo "Mooncakes does not serve $MODULE_NAME@$MODULE_VERSION yet (attempt $attempt/12); retrying in 10s"
+            sleep 10
+          done
+          if [ "$installed" -ne 1 ]; then
+            echo "::error::could not install $MODULE_NAME@$MODULE_VERSION from Mooncakes"
+            exit 1
+          fi
+          grep -q "\"$MODULE_NAME@$MODULE_VERSION\"" moon.mod
+
+          mkdir -p cmd/main
+
+          cat > cmd/main/moon.pkg <<'EOF'
           import {
             "wulisususu/moonuuid" @uuid,
           }
@@ -108,7 +159,7 @@ jobs:
           pkgtype(kind: "executable")
           EOF
 
-          cat > "$SMOKE/cmd/main/main.mbt" <<'EOF'
+          cat > cmd/main/main.mbt <<'EOF'
           ///|
           fn main {
             let value = "017f22e2-79b0-7cc3-98c4-dc0c0c07398f"
@@ -124,8 +175,7 @@ jobs:
           }
           EOF
 
-          cd "$SMOKE"
-          moon update
+          moon tree
           moon check --target native --deny-warn
           moon run cmd/main --target native
 

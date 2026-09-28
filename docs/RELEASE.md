@@ -53,7 +53,8 @@ moon build --target wasm-gc
 moon build --target js
 moon build --target native
 moon info --target native
-moon package --list
+moon check --frozen --target native --deny-warn
+moon package --frozen --list
 moon bench benchmarks --release --target native --deny-warn
 ```
 
@@ -94,25 +95,53 @@ publish-0.1.0
 
 The workflow then:
 
-1. checks the pinned MoonBit toolchain and release metadata;
-2. runs native formatting/check/test/interface verification;
-3. verifies the exact Mooncakes archive contents;
-4. publishes with `moon publish --frozen`;
-5. creates a clean external consumer module and installs
-   `wulisususu/moonuuid@0.1.0` from the registry;
-6. checks and runs that consumer;
-7. creates GitHub Release/tag `v0.1.0` only after the registry smoke test passes.
+1. checks that `moon update` does not move the pinned dependency graph, then runs
+   native formatting/check/test/interface verification, including a frozen
+   build-plan check;
+2. verifies the exact frozen Mooncakes archive contents;
+3. publishes the verified source with `moon publish`;
+4. creates a clean external consumer module and installs
+   `wulisususu/moonuuid@0.1.0` from the registry with `moon add`;
+5. checks and runs that consumer;
+6. creates GitHub Release/tag `v0.1.0` only after the registry smoke test passes.
 
 Local publication remains possible after `moon login`:
 
 ```bash
-moon publish --frozen
+moon update
+moon check --frozen --target native --deny-warn
+moon package --frozen --list
+moon publish
 ```
 
-The current MoonBit CLI documentation lists `--frozen` for `moon publish`
-but does not list a `--dry-run` option. The project therefore uses
-`moon package --list` plus the CI-uploaded package archive as the pre-publish
-inspection path rather than relying on an undocumented flag.
+### Why the release does not run `moon publish --frozen`
+
+`moon publish --frozen` cannot publish a module that depends on the registry.
+Before uploading anything, the CLI re-verifies its own output: it extracts the
+packaged archive into an empty directory and runs `moon check` inside that
+copy. The fresh copy has no `.mooncakes` directory, so the pinned dependency
+`moonbitlang/x@0.5.5` still has to be installed there, and `--frozen` rejects
+exactly that:
+
+```text
+Failed to sync dependencies: `frozen` is set, so the build system cannot
+change the modules directory, but new modules need to be installed
+```
+
+The CLI then aborts inside its own verification step with exit code 255, before
+anything reaches Mooncakes.
+
+The frozen guarantee is kept where it is meaningful instead: `moon update` must
+not move the pinned graph (`git diff --exit-code -- moon.mod`), `moon check
+--frozen` proves that the installed dependency set already satisfies the frozen
+build plan, and `moon package --frozen --list` builds and lists the archive from
+that same frozen plan. `moon.mod` pins `moonbitlang/x@0.5.5` exactly, so the
+published archive cannot resolve a different dependency version.
+
+The project inspects `moon package --frozen --list` plus the CI-uploaded
+package archive as the pre-publish path: the CLI exposes `--dry-run` as a
+common option but does not document what it means for `moon publish`, so the
+workflow does not rely on it.
 
 ## Post-publish smoke test
 
