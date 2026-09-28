@@ -1,1 +1,5 @@
 // MoonUUID public package.
+
+import {
+  "moonbitlang/core/env",
+}

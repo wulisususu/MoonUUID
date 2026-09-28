@@ -15,20 +15,27 @@ v0.1 foundation:
 - 128-bit `Uuid` value represented by two `UInt64` words;
 - strict canonical `8-4-4-4-12` parser;
 - permissive parser for canonical, compact, UUID URN and braced forms;
-- uppercase and lowercase hexadecimal input;
 - lowercase canonical, URN and braced formatting;
 - exact 16-byte network-order encode/decode;
-- UUID variant detection;
-- RFC-layout version extraction;
+- UUID variant detection and RFC-layout version extraction;
 - Nil UUID and Max UUID;
-- strict and permissive validation helpers;
+- UUIDv4 generation from secure platform entropy;
+- injectable UUIDv4 entropy provider for hosts and deterministic tests;
+- no weak-random fallback when secure entropy is unavailable;
 - equality / ordering / hashing support;
 - RFC 9562 Appendix A UUIDv4 and UUIDv7 test vectors;
 - CI on `wasm`, `wasm-gc`, `js`, Linux native and Windows native.
 
-Generation is intentionally the next layer. The parser and data model do not depend on an operating-system RNG or wall-clock API.
-
 ## Quick start
+
+Generate UUIDv4:
+
+```moonbit
+match @moonuuid.v4() {
+  Ok(id) => println(@moonuuid.to_string(id))
+  Err(_) => println("secure entropy unavailable")
+}
+```
 
 Strict canonical parsing:
 
@@ -70,16 +77,6 @@ match @moonuuid.parse("919108f7-52d1-4320-9bac-f847db4148a8") {
 }
 ```
 
-Nil and Max sentinels:
-
-```moonbit
-let none = @moonuuid.nil()
-let end = @moonuuid.max()
-
-assert_true(@moonuuid.is_nil(none))
-assert_true(@moonuuid.is_max(end))
-```
-
 ## Why this project
 
 UUID is infrastructure, not an application-specific abstraction. Typical consumers include:
@@ -93,6 +90,16 @@ UUID is infrastructure, not an application-specific abstraction. Typical consume
 
 RFC 9562 supersedes RFC 4122 and defines the current UUID layout, variants, versions, Nil / Max values, and UUIDv6 / UUIDv7 / UUIDv8.
 
+## Generation safety
+
+`v4()` delegates to MoonBit's platform secure entropy API `@env.rand`.
+
+If the current runtime cannot supply secure entropy, generation returns `EntropyUnavailable`; MoonUUID does **not** fall back to `Math.random`, timestamps or another weak source.
+
+For custom hosts and reproducible testing, use `v4_with_entropy(provider)` or the deterministic `v4_from_entropy(bytes)`.
+
+More details: [docs/V4.md](docs/V4.md).
+
 ## Text formats
 
 MoonUUID deliberately exposes two parsing modes:
@@ -101,8 +108,6 @@ MoonUUID deliberately exposes two parsing modes:
 | --- | --- |
 | `parse` | canonical `8-4-4-4-12` only |
 | `parse_permissive` | canonical, 32-hex compact, `urn:uuid:`, `{canonical}` |
-
-Keeping the strict API strict prevents accidental acceptance of transport-specific wrappers, while the permissive API gives adapters a single interoperability entry point.
 
 More details: [docs/FORMATS.md](docs/FORMATS.md).
 
@@ -127,10 +132,11 @@ More details: [docs/FORMATS.md](docs/FORMATS.md).
 
 ### Gate 3 — UUIDv4
 
-- [ ] entropy-provider interface
-- [ ] UUIDv4 bit layout
-- [ ] deterministic test entropy source
-- [ ] platform adapters
+- [x] entropy-provider interface
+- [x] UUIDv4 bit layout
+- [x] deterministic test entropy source
+- [x] platform secure-entropy adapter via `@env.rand`
+- [x] explicit unsupported-runtime failure without weak fallback
 
 ### Gate 4 — UUIDv7
 
@@ -151,7 +157,7 @@ More details: [docs/FORMATS.md](docs/FORMATS.md).
 
 MoonUUID is a UUID library. It is not an ORM, database, distributed-ID service, tracing framework, or workflow engine.
 
-The core package stays deterministic and portable. Runtime concerns such as secure randomness and wall-clock access will be introduced behind explicit provider interfaces so that UUID logic remains testable on every MoonBit backend.
+The deterministic codec and bit-layout logic remains portable. Runtime entropy enters only through an explicit provider boundary.
 
 ## License
 
