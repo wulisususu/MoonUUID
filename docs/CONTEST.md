@@ -3,6 +3,10 @@
 MoonUUID is a focused MoonBit ecosystem foundation library implementing RFC
 9562 UUID primitives.
 
+## Reviewer entry point
+
+For the shortest evidence path, start with [REVIEW_EVIDENCE.md](REVIEW_EVIDENCE.md). It connects the release, independent-consumer smoke test, differentiation, CI, tests and benchmarks without requiring a full repository read.
+
 ## Problem
 
 UUIDs appear repeatedly in Web APIs, database records, event streams, tracing,

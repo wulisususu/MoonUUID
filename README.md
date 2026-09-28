@@ -14,6 +14,10 @@ MoonUUID is designed as a reusable ecosystem library rather than an application-
 - License: Apache-2.0
 - Targets: `wasm`, `wasm-gc`, `js`, `native`
 
+## For reviewers
+
+Start with the [reviewer evidence snapshot](docs/REVIEW_EVIDENCE.md). It links the independent-value argument, published Mooncakes package, external consumer smoke test, cross-target CI, RFC vectors, property-style tests and benchmarks into one verification path.
+
 ## Why MoonUUID?
 
 MoonBit already has UUID implementations; MoonUUID does not claim an empty ecosystem. Its independent scope is **RFC 9562-oriented infrastructure with secure default generation and operational UUIDv7 semantics**: UUIDv6 support, injectable clock/entropy providers, no weak-random fallback, same-millisecond monotonicity, clock-rollback handling and explicit overflow behavior.
@@ -151,6 +155,7 @@ See [docs/BENCHMARKS.md](docs/BENCHMARKS.md) for methodology and the recorded CI
 
 ## Documentation
 
+- [Reviewer evidence snapshot](docs/REVIEW_EVIDENCE.md)
 - [API reference](docs/API.md)
 - [Why MoonUUID / ecosystem differentiation](docs/DIFFERENTIATION.md)
 - [Compatibility matrix](docs/COMPATIBILITY.md)
