@@ -115,7 +115,7 @@ test "UUID round trips through 16 network-order bytes" {
       assert_eq(@moonuuid.to_bytes(uuid), expected)
       match @moonuuid.from_bytes(expected) {
         Err(_) => fail("16-byte UUID must decode")
-        Ok(decoded) => assert_eq(decoded, uuid)
+        Ok(decoded) => assert_true(decoded == uuid)
       }
     }
   }
